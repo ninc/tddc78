@@ -1,23 +1,19 @@
+/*                                                                              
+ * Hello World in C                                                           
+ */
+#include <stdio.h>
 #include "mpi.h"
 
-void main( void)
+int main(int argc, char* argv[])
 {
-  MPI_Status status;
-  char *string = "xxxxx"; // Recieve buffer
-  int myid;
+  int rank, size;
 
-  MPI_Init(NULL, NULL);
-  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-  
-  if(myid==2)
-    MPI_Send( "HELLO", 5, MPI_CHAR, 7, 1234, MPI_COMM_WORLD);
-  
-  if(myid==7)
-    {
-      MPI_Recv(string, 5, MPI_CHAR, 2, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-      printf( "Got %s from P%d, tag %d\n", string, status.MPI_SOURCE, status.MPI_TAG);
-
-    }
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  printf("Hello, world, I am %d of %d\n", rank, size);
+  MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();
 
+  return 0;
 }

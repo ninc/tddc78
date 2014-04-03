@@ -1,7 +1,8 @@
+COMPILER = icc
 
-CFLAGS = 
+LFLAGS = -Nmpi
 
-LFLAGS= -lpthread -lrt -lm
+# -lpthread -lrt -lm -Nmpi
 
 all: hello_world
 
@@ -9,4 +10,4 @@ clean:
 	-$(RM) *.o hello_world
 
 hello_world: main.o
-	cc -o $@ main.o $(LFLAGS)
+	$(COMPILER) $(LFLAGS) -o main main.c
