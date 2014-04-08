@@ -1,17 +1,24 @@
 #include "thresfilter.h"
 
-
+void thresfilter(const int xsize, const int ysize, pixel* src){
 #define uint unsigned int 
 
-void thresfilter(const int start, const int stop, const int threshold, pixel* src){
+  uint sum, i, psum, nump;
 
-  uint i = 0;
-  uint psum = 0;
-  for(i = start; i < stop; i++) {
+  nump = xsize * ysize; //Area
+
+  for(i = 0, sum = 0; i < nump; i++) {
+    sum += (uint)src[i].r + (uint)src[i].g + (uint)src[i].b;
+  }
+
+  // sum = sum / nump;
+  sum /= nump; // Average pixel color
+
+  for(i = 0; i < nump; i++) {
     psum = (uint)src[i].r + (uint)src[i].g + (uint)src[i].b;
     
     // If darker than average pixel color ---> Make pixel black
-    if(threshold > psum) {
+    if(sum > psum) {
       src[i].r = src[i].g = src[i].b = 0;
     }
     // Brighter than average pixel color --> Make white
@@ -19,15 +26,4 @@ void thresfilter(const int start, const int stop, const int threshold, pixel* sr
       src[i].r = src[i].g = src[i].b = 255;
     }
   }
-}
-
-// Calculates the summation of all pixel values from start to stop
-int calcThreshold(const int start, const int stop, const pixel* src){
-  uint sum = 0;
-  uint i = 0;
-  for(i = start; i < stop; i++) {
-    sum += (uint)src[i].r + (uint)src[i].g + (uint)src[i].b;
-  }
-
-  return sum;
 }
