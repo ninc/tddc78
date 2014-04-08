@@ -1,5 +1,7 @@
 /*                                                                              
- * Hello World in C                                                           
+ * Hello World in C
+ *
+ * icc -Nmpi -o myapp myapp.c                                                     
  */
 #include <stdio.h>
 #include "mpi.h"
