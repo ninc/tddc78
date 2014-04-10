@@ -11,24 +11,25 @@ int main (int argc, char ** argv) {
     int xsize, ysize, colmax;
     pixel src[MAX_PIXELS];
     struct timespec stime, etime;
+    
+    int rank, size;
+
+    MPI_Init(NULL, NULL);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     /* Take care of the arguments */
 
+    if(myid
     if (argc != 3) {
 	fprintf(stderr, "Usage: %s infile outfile\n", argv[0]);
 	exit(1);
     }
-
-    int rank, size;
-
-    MPI_Init();
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
     
-    if
+    
     /* read file */
     if(read_ppm (argv[1], &xsize, &ysize, &colmax, (char *) src) != 0)
-        exit(1);
+      exit(1);
 
     if (colmax > 255) {
 	fprintf(stderr, "Too large maximum color-component value\n");
@@ -39,7 +40,7 @@ int main (int argc, char ** argv) {
 
     clock_gettime(CLOCK_REALTIME, &stime);
 
-    thresfilter(xsize, ysize, src);
+    //thresfilter(xsize, ysize, src);
 
     clock_gettime(CLOCK_REALTIME, &etime);
 
