@@ -5,6 +5,8 @@
 #include "ppmio.h"
 #include "thresfilter.h"
 
+#include "mpi.h"
+
 int main (int argc, char ** argv) {
     int xsize, ysize, colmax;
     pixel src[MAX_PIXELS];
@@ -17,6 +19,13 @@ int main (int argc, char ** argv) {
 	exit(1);
     }
 
+    int rank, size;
+
+    MPI_Init();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    
+    if
     /* read file */
     if(read_ppm (argv[1], &xsize, &ysize, &colmax, (char *) src) != 0)
         exit(1);
