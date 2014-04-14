@@ -33,6 +33,7 @@ void blurfilter(const int xsize, const int ysize, pixel* src, const int radius, 
       g = w[0] * pix(src, x, y, xsize)->g;
       b = w[0] * pix(src, x, y, xsize)->b;
       n = w[0];
+      //start scanning radius of certain point in picture
       for ( wi=1; wi <= radius; wi++) {
 	wc = w[wi];
 	x2 = x - wi;
