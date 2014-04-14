@@ -7,30 +7,31 @@
 
 #include "mpi.h"
 
-typedef struct _pixel {
-    unsigned char r,g,b;
-} pixel;
-
-int thresfilteravgpix(const int xsize, const int ysize, pixel* src){
 #define uint unsigned int 
 
-  uint sum, i, psum, nump;
+uint sum_avg_pix(const int size, pixel* src){
 
-  nump = xsize * ysize; //Area
+  uint sum, i;
 
-  for(i = 0, sum = 0; i < nump; i++) {
+  for(i = 0, sum = 0; i < size; i++) {
     sum += (uint)src[i].r + (uint)src[i].g + (uint)src[i].b;
   }
 
-  return sum /= nump; // Average pixel color
+  return sum;
 }
 
 int main (int argc, char ** argv) {
+
     int xsize, ysize, colmax;
+    int chunk;
     pixel src[MAX_PIXELS];
+    pixel* rbuf;
     struct timespec stime, etime;
-    
     int rank, size;
+    uint *global_sum;
+    uint *local_sum;
+    uint avg = 0;
+    int root = 0;
 
     MPI_Init(NULL, NULL);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -41,26 +42,70 @@ int main (int argc, char ** argv) {
     
     if (argc != 3) {
       fprintf(stderr, "Usage: %s infile outfile\n", argv[0]);
+      MPI_Finalize();
       exit(1);
     }
     
     
-    if(myid==0) {
+    if(rank==root) {
       /* read file */
       if(read_ppm (argv[1], &xsize, &ysize, &colmax, (char *) src) != 0)
-	exit(1);
-
+	{
+	  MPI_Finalize();
+	  exit(2);
+	}
       if (colmax > 255) {
 	fprintf(stderr, "Too large maximum color-component value\n");
-	exit(1);
+	MPI_Finalize();
+	exit(3);
       }
       
       
+      printf("Has read the image, calling filter\n");
+
     }
-    printf("Has read the image, calling filter\n");
 
     clock_gettime(CLOCK_REALTIME, &stime);
 
+
+    // Calc and broadcast chunks
+    if(rank==root)
+      {
+      //Calc chunks
+      chunk = (xsize*ysize)/size;
+      global_sum = (uint *)malloc(sizeof(uint));
+      *global_sum = 0;
+      }
+
+    MPI_Bcast(&chunk, 1, MPI_INT, root, MPI_COMM_WORLD);
+
+    if(rank==root)
+      printf("Has broadcasted chunks. Calling Scatter\n");
+
+
+    //Create local buffer
+    rbuf = (pixel *)malloc(chunk*sizeof(pixel)); 
+
+    MPI_Scatter(src, chunk, MPI_CHAR, rbuf, chunk, MPI_CHAR, root, MPI_COMM_WORLD);
+
+    if(rank==root)
+      printf("Scatter complete\n");
+
+    //Create local buffer
+    local_sum = (uint *)malloc(sizeof(uint));
+    *local_sum = sum_avg_pix(chunk, rbuf);
+
+    printf("Local_sum: %d\n", *local_sum) ;
+
+    MPI_Reduce(local_sum, global_sum, 1, MPI_UNSIGNED, MPI_SUM, root, MPI_COMM_WORLD);
+    
+    if(rank==root)
+      {
+	printf("Global_sum: %d\n", *global_sum);
+	avg = *global_sum / (xsize*ysize);
+	printf("Avg: %d\n", avg);
+      }
+    
     //if(myid==0) {
     //Do broadcast
     //The srbuf consists of xsize, ysize and the src vector...need an own created buffer for this shit...
@@ -86,15 +131,21 @@ int main (int argc, char ** argv) {
     
     clock_gettime(CLOCK_REALTIME, &etime);
 
-    printf("Filtering took: %g secs\n", (etime.tv_sec  - stime.tv_sec) +
-	   1e-9*(etime.tv_nsec  - stime.tv_nsec)) ;
+    if(rank==0)
+      {
+	printf("Filtering took: %g secs\n", (etime.tv_sec  - stime.tv_sec) +
+	       1e-9*(etime.tv_nsec  - stime.tv_nsec)) ;
 
-    /* write result */
-    printf("Writing output file\n");
+	/* write result */
+	printf("Writing output file\n");
     
-    if(write_ppm (argv[2], xsize, ysize, (char *)src) != 0)
-      exit(1);
-       
+	if(write_ppm (argv[2], xsize, ysize, (char *)src) != 0)
+	  {
+	    MPI_Finalize();
+	    exit(4);
+	  }
+      }
 
+    MPI_Finalize();
     return(0);
 }

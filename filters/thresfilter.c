@@ -14,6 +14,8 @@ void thresfilter(const int xsize, const int ysize, pixel* src){
   // sum = sum / nump;
   sum /= nump; // Average pixel color
 
+  printf("Avg: %d\n", sum);
+
   for(i = 0; i < nump; i++) {
     psum = (uint)src[i].r + (uint)src[i].g + (uint)src[i].b;
     
