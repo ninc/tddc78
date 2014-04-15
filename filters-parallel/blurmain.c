@@ -59,6 +59,11 @@ int main (int argc, char ** argv) {
     int sendcnt;
     int recimg;
     int recelm;
+    int restl;
+    int tot_cnt;
+    int lwbnd;
+    int upbnd;
+    
 
     /* Take care of the arguments */
 
@@ -117,58 +122,75 @@ int main (int argc, char ** argv) {
     if(rank == root)
       {
 	displ = 0;
-
-	sendcnt = (y+radius)*xsize; 
-	
-	if(sendcnt > xsize*ysize)
-	  sendcnt = xsize*ysize;
-
-	displ_down = ysize - displ + y;
+	lwbnd = radius;
+	upbnd = 0; 
+	tot_cnt = displ+(upbnd+y+radius)*xsize;
+	if(tot_cnt> (xsize*ysize)){
+	  lwbnd = radius - (tot_cnt - xsize*ysize)/xsize;
+	 
+	}
+	sendcnt = (y+upbnd+lwbnd)*xsize;
 	recimg = rank*y*xsize;
 	recelm = y * xsize;
       }
     //Bottom layer
     else if(rank==size-1)
       {
-	
-	displ = rank*(y-radius)*xsize;
 
-	if(displ < 0)
+	displ = rank*y*xsize -xsize*radius;
+	upbnd = radius;
+	lwbnd = 0;
+	if(displ < 0){
 	  displ = 0;
-	displ_down = ysize - displ + y;
-	sendcnt = ((ysize-y*size + y)+radius)*xsize;
-
-	if(sendcnt > xsize*ysize)
-	  sendcnt = xsize*ysize;
-
-
+	  upbnd = radius + displ/xsize;
+	}
+	
 	recimg = rank*y*xsize;
-	recelm = (ysize-y*size + y)* xsize;
+	y = ysize - y* size + y;
+
+	tot_cnt = displ+(upbnd+y+radius)*xsize;
+	if(tot_cnt> (xsize*ysize)){
+	  lwbnd = radius - (tot_cnt - xsize*ysize)/xsize;
+	 
+	}
+	sendcnt = (y+upbnd+lwbnd)*xsize;
+
+
+	recelm = y* xsize;
+
       }
     //Middle layers
     else
       {
-	displ = rank*(y-radius)*xsize;
-
-	if(displ < 0)
+	displ = rank*y*xsize -xsize*radius;
+	lwbnd = radius;
+	upbnd = radius;
+	if(displ < 0){
+	  upbnd = radius + displ/xsize;
 	  displ = 0;
+	}
 	displ_down = ysize - displ + y;
-	sendcnt = (y+2*radius)*xsize;
-
-	if(sendcnt > xsize*ysize)
-	  sendcnt = xsize*ysize;
-
+	tot_cnt = displ+(upbnd+y+radius)*xsize;
+	if(tot_cnt> (xsize*ysize)){
+	  lwbnd = radius - (tot_cnt - xsize*ysize)/xsize;
+	 
+	}
+	sendcnt = (y+upbnd+lwbnd)*xsize;
 	recimg = rank*y*xsize;
 	recelm = y*xsize;
       }
 
-    //printf("Local displacement for rank %u: %u\n", rank, displ);
+    if(rank==1)
+      printf("Local displ for rank %d: %d: %d: \n", rank, lwbnd, upbnd);
     //printf("Send count for rank %u: %u\n", rank, sendcnt);
+
+
+    
 
 
     //Create read buffer
     rbuf = (pixel *)malloc(sendcnt*sizeof(pixel)); 
-    local_dst = (pixel *)malloc(recelm*sizeof(pixel));
+    //local_dst = (pixel *)malloc(recelm*sizeof(pixel));
 
 
     //Recieve global distribution of threads
@@ -177,37 +199,53 @@ int main (int argc, char ** argv) {
     MPI_Gather(&recimg, 1, MPI_INT, recimage, 1, MPI_INT, root, MPI_COMM_WORLD);
     MPI_Gather(&recelm, 1, MPI_INT, recelement, 1, MPI_INT, root, MPI_COMM_WORLD);
 
+    // Test
+    if(rank==root)
+      {
+	int i;
+	for(i = 0; i<size; i++)
+	  {
+	    printf("Displ %u, sendcount %u and Recimg %u, Recelement %u for rank %u \n",displc[i],sendcount[i], recimage[i], recelement[i], i);
+	  }
+
+      }
+
     // Where the action happens!
     clock_gettime(CLOCK_REALTIME, &stime);
 
     // Scatter the fucking whore bitch ass cunt
     MPI_Scatterv(src, sendcount, displc, mpi_img, rbuf, sendcnt, mpi_img, root, MPI_COMM_WORLD);
-    //MPI_Scatter(dst, y*xsize, mpi_img, local_dst, y*xsize, mpi_img, root, MPI_COMM_WORLD);
-  
-
-
-    //For testing purposes only
-    /*
-    int j;
-    for(j = 0; j<recelm; j++)
-      {
-	local_dst[j].r = rank*(255/size);
-	local_dst[j].g = 0;
-	local_dst[j].b = 0;
-      }
     
+    
+    
+
+    /*if(rank==15)
+      {
+	if(write_ppm ("test.ppm", xsize, y+radius, (char *)rbuf) != 0)
+	  {
+	    MPI_Finalize();
+	    exit(1);
+	  }
+      }
     */
 
-    //Handle larger chunk at the bottom
-    if(rank==size-1)
-      blur(xsize, (y + ysize - y*size), src, local_dst, radius, w, displ, displ_down, recelm);
+    
+    
+    if(rank==root)
+      // Filter this shit
+      blurfilter_first(xsize, y+lwbnd, rbuf, radius, w);
+    else if(rank==size-1)
+      // Filter this shit
+      blurfilter(xsize, y+upbnd, rbuf, radius, w);
     else
-      blur(xsize, y, src, local_dst, radius, w, displ, displ_down, recelm);
-
-
-    //blur_y(xsize, y, src, local_dst, radius, w, displ, displ_down);
-
-     
+      // Filter this shit
+      blurfilter(xsize, y+upbnd+lwbnd, rbuf, radius, w);
+    
+    
+    if(rank==root)
+      local_dst = &rbuf[0];
+    else
+      local_dst = rbuf+(xsize*upbnd);
 
     if(rank==size-1)
       {
@@ -223,9 +261,9 @@ int main (int argc, char ** argv) {
     //printf("Rank : %d, recimg: %d \n", rank, recimg);
    
     MPI_Gatherv(local_dst, recelm, mpi_img, src, recelement, recimage, mpi_img, root, MPI_COMM_WORLD);
+  
 
     clock_gettime(CLOCK_REALTIME, &etime);
-
     if(rank==root)
       {
 	printf("Filtering took: %g secs\n", (etime.tv_sec  - stime.tv_sec) +
