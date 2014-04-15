@@ -10,248 +10,11 @@
 
 #define MAX_RAD 1000
 
-
-pixel* pix_calc(pixel* image, const int xx, const int yy, const int xsize)
-{
-  register int off = xsize*yy + xx;
-
-#ifdef DBG
-  if(off >= MAX_PIXELS) {
-    fprintf(stderr, "\n Terribly wrong: %d %d %d\n",xx,yy,xsize);
-  }
-#endif
-  return (image + off);
-}
-
-
-void blur_calc(const int xsize, const int ysize, pixel* src, pixel* dst, const int radius, const double *w){
-  int x,y,x2,y2, wi;
-  double r,g,b,n, wc;
-
-  for (y=radius; y<ysize-radius; y++) {
-    for (x=0; x<xsize; x++) {
-      r = w[0] * pix_calc(src, x, y, xsize)->r;
-      g = w[0] * pix_calc(src, x, y, xsize)->g;
-      b = w[0] * pix_calc(src, x, y, xsize)->b;
-      n = w[0];
-      //start scanning radius of certain point in picture
-      for ( wi=1; wi <= radius; wi++) {
-	wc = w[wi];
-	x2 = x - wi;
-	if(x2 >= 0) {
-	  r += wc * pix_calc(src, x2, y, xsize)->r;
-	  g += wc * pix_calc(src, x2, y, xsize)->g;
-	  b += wc * pix_calc(src, x2, y, xsize)->b;
-	  n += wc;
-	}
-	x2 = x + wi;
-	if(x2 < xsize) {
-	  r += wc * pix_calc(src, x2, y, xsize)->r;
-	  g += wc * pix_calc(src, x2, y, xsize)->g;
-	  b += wc * pix_calc(src, x2, y, xsize)->b;
-	  n += wc;
-	}
-      }
-      pix_calc(dst,x,y, xsize)->r = r/n;
-      pix_calc(dst,x,y, xsize)->g = g/n;
-      pix_calc(dst,x,y, xsize)->b = b/n;
-    }
-  }
-}
-
-void blur_calc_start(const int xsize, const int ysize, pixel* src, pixel* dst, const int radius, const double *w){
-  int x,y,x2,y2, wi;
-  double r,g,b,n, wc;
-
-  for (y=0; y<ysize-radius; y++) {
-    for (x=0; x<xsize; x++) {
-      r = w[0] * pix_calc(src, x, y, xsize)->r;
-      g = w[0] * pix_calc(src, x, y, xsize)->g;
-      b = w[0] * pix_calc(src, x, y, xsize)->b;
-      n = w[0];
-      //start scanning radius of certain point in picture
-      for ( wi=1; wi <= radius; wi++) {
-	wc = w[wi];
-	x2 = x - wi;
-	if(x2 >= 0) {
-	  r += wc * pix_calc(src, x2, y, xsize)->r;
-	  g += wc * pix_calc(src, x2, y, xsize)->g;
-	  b += wc * pix_calc(src, x2, y, xsize)->b;
-	  n += wc;
-	}
-	x2 = x + wi;
-	if(x2 < xsize) {
-	  r += wc * pix_calc(src, x2, y, xsize)->r;
-	  g += wc * pix_calc(src, x2, y, xsize)->g;
-	  b += wc * pix_calc(src, x2, y, xsize)->b;
-	  n += wc;
-	}
-      }
-      pix_calc(dst,x,y, xsize)->r = r/n;
-      pix_calc(dst,x,y, xsize)->g = g/n;
-      pix_calc(dst,x,y, xsize)->b = b/n;
-    }
-  }
-}
-
-void blur_calc_last(const int xsize, const int ysize, pixel* src, pixel* dst, const int radius, const double *w){
-  int x,y,x2,y2, wi;
-  double r,g,b,n, wc;
-
-  for (y=radius; y<ysize; y++) {
-    for (x=0; x<xsize; x++) {
-      r = w[0] * pix_calc(src, x, y, xsize)->r;
-      g = w[0] * pix_calc(src, x, y, xsize)->g;
-      b = w[0] * pix_calc(src, x, y, xsize)->b;
-      n = w[0];
-      //start scanning radius of certain point in picture
-      for ( wi=1; wi <= radius; wi++) {
-	wc = w[wi];
-	x2 = x - wi;
-	if(x2 >= 0) {
-	  r += wc * pix_calc(src, x2, y, xsize)->r;
-	  g += wc * pix_calc(src, x2, y, xsize)->g;
-	  b += wc * pix_calc(src, x2, y, xsize)->b;
-	  n += wc;
-	}
-	x2 = x + wi;
-	if(x2 < xsize) {
-	  r += wc * pix_calc(src, x2, y, xsize)->r;
-	  g += wc * pix_calc(src, x2, y, xsize)->g;
-	  b += wc * pix_calc(src, x2, y, xsize)->b;
-	  n += wc;
-	}
-      }
-      pix_calc(dst,x,y, xsize)->r = r/n;
-      pix_calc(dst,x,y, xsize)->g = g/n;
-      pix_calc(dst,x,y, xsize)->b = b/n;
-    }
-  }
-}
-
-
-
-
-
-
-
-void blur_start(const int xsize, const int ysize, pixel* src, pixel* dst,  const int radius, const double *w){
-
-  int x,y,x2,y2, wi;
-  double r,g,b,n, wc;
-
-  for (y=0; y<ysize-radius; y++) {
-    for (x=0; x<xsize; x++) {
-      r = w[0] * pix_calc(dst, x, y, xsize)->r;
-      g = w[0] * pix_calc(dst, x, y, xsize)->g;
-      b = w[0] * pix_calc(dst, x, y, xsize)->b;
-      n = w[0];
-      for ( wi=1; wi <= radius; wi++) {
-	wc = w[wi];
-	y2 = y - wi;
-	if(y2 >= 0) {
-	  r += wc * pix_calc(dst, x, y2, xsize)->r;
-	  g += wc * pix_calc(dst, x, y2, xsize)->g;
-	  b += wc * pix_calc(dst, x, y2, xsize)->b;
-	  n += wc;
-	}
-	y2 = y + wi;
-	if(y2 < ysize) {
-	  r += wc * pix_calc(dst, x, y2, xsize)->r;
-	  g += wc * pix_calc(dst, x, y2, xsize)->g;
-	  b += wc * pix_calc(dst, x, y2, xsize)->b;
-	  n += wc;
-	}
-      }
-      pix_calc(src,x,y, xsize)->r = r/n;
-      pix_calc(src,x,y, xsize)->g = g/n;
-      pix_calc(src,x,y, xsize)->b = b/n;
-    }
-  }
-
-}
-
-
-void blur_last(const int xsize, const int ysize, pixel* src, pixel* dst,  const int radius, const double *w){
-
-  int x,y,x2,y2, wi;
-  double r,g,b,n, wc;
-
-  for (y=radius; y<ysize; y++) {
-    for (x=0; x<xsize; x++) {
-      r = w[0] * pix_calc(dst, x, y, xsize)->r;
-      g = w[0] * pix_calc(dst, x, y, xsize)->g;
-      b = w[0] * pix_calc(dst, x, y, xsize)->b;
-      n = w[0];
-      for ( wi=1; wi <= radius; wi++) {
-	wc = w[wi];
-	y2 = y - wi;
-	if(y2 >= 0) {
-	  r += wc * pix_calc(dst, x, y2, xsize)->r;
-	  g += wc * pix_calc(dst, x, y2, xsize)->g;
-	  b += wc * pix_calc(dst, x, y2, xsize)->b;
-	  n += wc;
-	}
-	y2 = y + wi;
-	if(y2 < ysize) {
-	  r += wc * pix_calc(dst, x, y2, xsize)->r;
-	  g += wc * pix_calc(dst, x, y2, xsize)->g;
-	  b += wc * pix_calc(dst, x, y2, xsize)->b;
-	  n += wc;
-	}
-      }
-      pix_calc(src,x,y, xsize)->r = r/n;
-      pix_calc(src,x,y, xsize)->g = g/n;
-      pix_calc(src,x,y, xsize)->b = b/n;
-    }
-  }
-
-}
-
-void blur(const int xsize, const int ysize, pixel* src, pixel* dst,  const int radius, const double *w){
-
-  int x,y,x2,y2, wi;
-  double r,g,b,n, wc;
-
-  for (y=0; y<ysize; y++) {
-    for (x=0; x<xsize; x++) {
-      r = w[0] * pix_calc(dst, x, y, xsize)->r;
-      g = w[0] * pix_calc(dst, x, y, xsize)->g;
-      b = w[0] * pix_calc(dst, x, y, xsize)->b;
-      n = w[0];
-      for ( wi=1; wi <= radius; wi++) {
-	wc = w[wi];
-	y2 = y - wi;
-	if(y2 >= 0) {
-	  r += wc * pix_calc(dst, x, y2, xsize)->r;
-	  g += wc * pix_calc(dst, x, y2, xsize)->g;
-	  b += wc * pix_calc(dst, x, y2, xsize)->b;
-	  n += wc;
-	}
-	y2 = y + wi;
-	if(y2 < ysize) {
-	  r += wc * pix_calc(dst, x, y2, xsize)->r;
-	  g += wc * pix_calc(dst, x, y2, xsize)->g;
-	  b += wc * pix_calc(dst, x, y2, xsize)->b;
-	  n += wc;
-	}
-      }
-      pix_calc(src,x,y, xsize)->r = r/n;
-      pix_calc(src,x,y, xsize)->g = g/n;
-      pix_calc(src,x,y, xsize)->b = b/n;
-    }
-  }
-
-}
-
-
-
-
-
 int main (int argc, char ** argv) {
   int radius;
   int xsize, ysize, colmax;
   pixel src[MAX_PIXELS];
+  pixel dst[MAX_PIXELS];
   pixel* rbuf = NULL;
   pixel* local_dst = NULL;
   struct timespec stime, etime;
@@ -288,9 +51,14 @@ int main (int argc, char ** argv) {
     //Global
     int displc[size];
     int sendcount[size];
+    int recimage[size];
+    int recelement[size];
     // Local variables
     int displ;
+    int displ_down;
     int sendcnt;
+    int recimg;
+    int recelm;
 
     /* Take care of the arguments */
 
@@ -330,6 +98,7 @@ int main (int argc, char ** argv) {
 	printf("Calling filter\n");
 
 	y = (ysize/size);
+	printf("value of y and x: %d, %d \n", y, xsize);
       }
 
     //Creating buffer
@@ -340,7 +109,7 @@ int main (int argc, char ** argv) {
     
     MPI_Bcast(&xsize, 1, MPI_INT, root, MPI_COMM_WORLD);
     MPI_Bcast(&y, 1, MPI_INT, root, MPI_COMM_WORLD);
-
+    MPI_Bcast(&ysize, 1, MPI_INT, root, MPI_COMM_WORLD);
 
     
     // Calculate distribution of threads
@@ -348,22 +117,49 @@ int main (int argc, char ** argv) {
     if(rank == root)
       {
 	displ = 0;
+
 	sendcnt = (y+radius)*xsize; 
+	
+	if(sendcnt > xsize*ysize)
+	  sendcnt = xsize*ysize;
+
+	displ_down = ysize - displ + y;
+	recimg = rank*y*xsize;
+	recelm = y * xsize;
       }
     //Bottom layer
     else if(rank==size-1)
       {
-	//Kanske behöver +1 
-	displ = rank*(y+radius)*xsize;
-	sendcnt = (y+radius)*xsize;
+	
+	displ = rank*(y-radius)*xsize;
+
+	if(displ < 0)
+	  displ = 0;
+	displ_down = ysize - displ + y;
+	sendcnt = ((ysize-y*size + y)+radius)*xsize;
+
+	if(sendcnt > xsize*ysize)
+	  sendcnt = xsize*ysize;
+
+
+	recimg = rank*y*xsize;
+	recelm = (ysize-y*size + y)* xsize;
       }
     //Middle layers
     else
       {
-	// Kanske behöver +1
-	displ = rank*(y+radius)*xsize;
-	//displc[rank] = (rank-1)*(y+radius)*xsize + (y+radius)*xsize;
+	displ = rank*(y-radius)*xsize;
+
+	if(displ < 0)
+	  displ = 0;
+	displ_down = ysize - displ + y;
 	sendcnt = (y+2*radius)*xsize;
+
+	if(sendcnt > xsize*ysize)
+	  sendcnt = xsize*ysize;
+
+	recimg = rank*y*xsize;
+	recelm = y*xsize;
       }
 
     //printf("Local displacement for rank %u: %u\n", rank, displ);
@@ -372,13 +168,14 @@ int main (int argc, char ** argv) {
 
     //Create read buffer
     rbuf = (pixel *)malloc(sendcnt*sizeof(pixel)); 
-    local_dst = (pixel *)malloc(y*xsize*sizeof(pixel));
+    local_dst = (pixel *)malloc(recelm*sizeof(pixel));
 
 
     //Recieve global distribution of threads
     MPI_Gather(&displ, 1, MPI_INT, displc, 1, MPI_INT, root, MPI_COMM_WORLD);
     MPI_Gather(&sendcnt, 1, MPI_INT, sendcount, 1, MPI_INT, root, MPI_COMM_WORLD);
-
+    MPI_Gather(&recimg, 1, MPI_INT, recimage, 1, MPI_INT, root, MPI_COMM_WORLD);
+    MPI_Gather(&recelm, 1, MPI_INT, recelement, 1, MPI_INT, root, MPI_COMM_WORLD);
 
     // Where the action happens!
     clock_gettime(CLOCK_REALTIME, &stime);
@@ -386,36 +183,46 @@ int main (int argc, char ** argv) {
     // Scatter the fucking whore bitch ass cunt
     MPI_Scatterv(src, sendcount, displc, mpi_img, rbuf, sendcnt, mpi_img, root, MPI_COMM_WORLD);
     //MPI_Scatter(dst, y*xsize, mpi_img, local_dst, y*xsize, mpi_img, root, MPI_COMM_WORLD);
+  
 
 
-    if(rank == root)
-      {
-	blur_calc_start(xsize, y, src, local_dst, radius, w);
-	blur_start(xsize, y, src, local_dst, radius, w);
-      }
+    //For testing purposes only
     /*
-    else if(rank == size - 1)
+    int j;
+    for(j = 0; j<recelm; j++)
       {
-	blur_calc_last(xsize, y, src, local_dst, radius, w);
-	blur_last(xsize, y, src, local_dst, radius, w);
+	local_dst[j].r = rank*(255/size);
+	local_dst[j].g = 0;
+	local_dst[j].b = 0;
       }
+    
+    */
+
+    //Handle larger chunk at the bottom
+    if(rank==size-1)
+      blur(xsize, (y + ysize - y*size), src, local_dst, radius, w, displ, displ_down, recelm);
     else
+      blur(xsize, y, src, local_dst, radius, w, displ, displ_down, recelm);
+
+
+    //blur_y(xsize, y, src, local_dst, radius, w, displ, displ_down);
+
+     
+
+    if(rank==size-1)
       {
-	blur_calc(xsize, y, src, local_dst, radius, w);
-	blur(xsize, y, src, local_dst, radius, w);
+	uint k = recimg + recelm;
+	uint o = xsize*ysize;
+
+	printf("last_pos %d, imagesize %d\n",k,o);
+
       }
-    */
-    /*
 
-       int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
-                       void *recvbuf, int *recvcnts, int *displs,
-                       MPI_Datatype recvtype, int root, MPI_Comm comm)
-
-    */
+    
     // Scatter the fucking whore bitch ass cunt
-    //MPI_Gatherv(local_dst, y*xsize, mpi_img, src, sendcount, displc, mpi_img, root, MPI_COMM_WORLD);
-
-    //MPI_Gather(local_dst, y*xsize, mpi_img, dst, y*xsize, mpi_img, root, MPI_COMM_WORLD);
+    //printf("Rank : %d, recimg: %d \n", rank, recimg);
+   
+    MPI_Gatherv(local_dst, recelm, mpi_img, src, recelement, recimage, mpi_img, root, MPI_COMM_WORLD);
 
     clock_gettime(CLOCK_REALTIME, &etime);
 
