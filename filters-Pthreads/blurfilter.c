@@ -24,14 +24,19 @@ pixel* pix(pixel* image, const int xx, const int yy, const int xsize)
 
 void* blur(void *d){
   blur_data *data = (blur_data*) d;
-  
-	int x, y, x2, y2, wi;
-	double r, g, b, n, wc;
-	pixel dst[MAX_PIXELS];
+  pixel* src = data->src;
+  double* w = data->gauss;
+  unsigned int xsize = data->x_max;
+  unsigned int ysize = data->y_max;
+  unsigned int radius = data->radius;
+  int x, y, x2, y2, wi;
+  double r, g, b, n, wc;
+  pixel dst[MAX_PIXELS];
 
+  printf("y_start %d, y_end %d, radius %d, img_start %d, img_end %d of thread %d\n", data->y_start, data->y_end, data->radius, data->img_start, data->img_end, data->id);
 
-	for (y = 0; y<ysize; y++) {
-		for (x = 0; x<xsize; x++) {
+	for (y = data->y_start; y<=data->y_end; y++) {
+		for (x = data->x_start; x<data->x_end; x++) {
 			r = w[0] * pix(src, x, y, xsize)->r;
 			g = w[0] * pix(src, x, y, xsize)->g;
 			b = w[0] * pix(src, x, y, xsize)->b;
@@ -39,6 +44,7 @@ void* blur(void *d){
 			for (wi = 1; wi <= radius; wi++) {
 				wc = w[wi];
 				x2 = x - wi;
+				// If we are outside of the img
 				if (x2 >= 0) {
 					r += wc * pix(src, x2, y, xsize)->r;
 					g += wc * pix(src, x2, y, xsize)->g;
@@ -46,7 +52,8 @@ void* blur(void *d){
 					n += wc;
 				}
 				x2 = x + wi;
-				if (x2 < xsize) {
+				// If we are outside of the img
+				if (x2 <= data->x_max) {
 					r += wc * pix(src, x2, y, xsize)->r;
 					g += wc * pix(src, x2, y, xsize)->g;
 					b += wc * pix(src, x2, y, xsize)->b;
@@ -59,8 +66,8 @@ void* blur(void *d){
 		}
 	}
 
-	for (y = 0; y<ysize; y++) {
-		for (x = 0; x<xsize; x++) {
+	for (y = data->y_start; y<=data->y_end; y++) {
+		for (x = data->x_start; x<data->x_end; x++) {
 			r = w[0] * pix(dst, x, y, xsize)->r;
 			g = w[0] * pix(dst, x, y, xsize)->g;
 			b = w[0] * pix(dst, x, y, xsize)->b;
@@ -68,26 +75,29 @@ void* blur(void *d){
 			for (wi = 1; wi <= radius; wi++) {
 				wc = w[wi];
 				y2 = y - wi;
-				if (y2 >= 0) {
+				// If we are outside of the img
+				if (y2 >= 0 && y2 >= data->y_start) {
 					r += wc * pix(dst, x, y2, xsize)->r;
 					g += wc * pix(dst, x, y2, xsize)->g;
 					b += wc * pix(dst, x, y2, xsize)->b;
 					n += wc;
 				}
 				y2 = y + wi;
-				if (y2 < ysize) {
+				// If we are outside of the img
+				if (y2 <= data->y_end && y2 <= data->y_max) {
 					r += wc * pix(dst, x, y2, xsize)->r;
 					g += wc * pix(dst, x, y2, xsize)->g;
 					b += wc * pix(dst, x, y2, xsize)->b;
 					n += wc;
 				}
 			}
-			pix(src, x, y, xsize)->r = r / n;
-			pix(src, x, y, xsize)->g = g / n;
-			pix(src, x, y, xsize)->b = b / n;
+			pix(data->dst, x, y, xsize)->r = r / n;
+			pix(data->dst, x, y, xsize)->g = g / n;
+			pix(data->dst, x, y, xsize)->b = b / n;
 		}
 	}
 
+	return 0;
 }
 
 

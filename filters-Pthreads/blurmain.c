@@ -7,50 +7,41 @@
 #include "gaussw.h"
 #include <pthread.h>
 #define NUM_THREADS 4
-
+#define MAX_RAD 1000
 
 // x_matfe
 // HPL2245wg
-
-typedef struct _blur_data
-{
-	int id;
-	unsigned int x_start;
-	unsigned int x_end;
-	unsigned int y_start;
-	unsigned int y_end;
-	unsigned int y_max;
-	unsigned int x_max;
-	unsigned int img_start;
-	unsigned int img_end;
-	unsigned int radius;
-	double * gauss;
-	pixel* src;
-	pixel* dst;
-} blur_data;
-
-
-
 
 void calc_thread_data(blur_data data[], int xsize, int ysize, int radius, double* gauss, pixel* src, pixel* dst)
 {
 	unsigned int chunk_size = ysize / NUM_THREADS;
 	unsigned int start = 0;
 	unsigned int end = chunk_size;
-	unsigned int y_start;
-	unsigned int y_end;
+	int y_start;
+	int y_end;
 	int i = 0;
 
 	//Assign relevant data to each thread
 	for (i = 0; i < NUM_THREADS; i++)
 	{
+
+		// Correct the concatination fault
+		if (i == NUM_THREADS - 1)
+		{
+			end = ysize;
+		}
+		else
+		{
+			end = start + chunk_size;
+		}
+
 		data[i].id = i;
 		data[i].x_start = 0;
 		data[i].x_end = xsize;
 		data[i].img_start = start;
 		data[i].img_end = end;
 		data[i].y_max = ysize;
-		data[i].x_max = x_max;
+		data[i].x_max = xsize;
 		data[i].radius = radius;
 		data[i].gauss = gauss;
 		data[i].src = src;
@@ -68,28 +59,17 @@ void calc_thread_data(blur_data data[], int xsize, int ysize, int radius, double
 		}
 
 		// Correct out of bounds radius
-		if (y_end > y_size)
+		if (y_end > ysize)
 		{
-			y_end = y_size;
+			y_end = ysize;
 		}
 		
 
 		data[i].y_start = y_start;
 		data[i].y_end = y_end;
 
-
-
 		// Assign next chunk
 		start = end + 1;
-		// Correct the concatination fault
-		if (i == NUM_THREADS - 1)
-		{
-			end = img_size;
-		}
-		else
-		{
-			end = start + chunk_size;
-		}
 
 	}
 }
@@ -98,10 +78,12 @@ int main (int argc, char ** argv) {
 	int radius;
     int xsize, ysize, colmax;
     pixel src[MAX_PIXELS];
-	pixel dst[MAX_PIXELS];
+    pixel dst[MAX_PIXELS];
     struct timespec stime, etime;
-	blur_data data[NUM_THREADS];
-	#define MAX_RAD 1000
+    blur_data data[NUM_THREADS];
+    pthread_t threads[NUM_THREADS];
+    long t = 0;
+    int ret;
 
     double w[MAX_RAD];
 
@@ -133,11 +115,11 @@ int main (int argc, char ** argv) {
 
 	printf("Setting up threads\n");
 
-	calc_thread_data(data, xsize, ysize, radius, w, src);
+	calc_thread_data(data, xsize, ysize, radius, w, src, dst);
 
-    printf("Calling filter\n");
+	printf("Calling filter\n");
 
-	clock_gettime(CLOCK_REALTIME, &stime);
+	//clock_gettime(CLOCK_REALTIME, &stime);
 
 	//Apply blur filter for each threads segment
 	for (t = 0; t<NUM_THREADS; t++){
@@ -156,15 +138,17 @@ int main (int argc, char ** argv) {
 
     //blurfilter(xsize, ysize, src, radius, w);
 
-    clock_gettime(CLOCK_REALTIME, &etime);
+    //clock_gettime(CLOCK_REALTIME, &etime);
 
+	/*
     printf("Filtering took: %g secs\n", (etime.tv_sec  - stime.tv_sec) +
 	   1e-9*(etime.tv_nsec  - stime.tv_nsec)) ;
-
+	*/
     /* write result */
     printf("Writing output file\n");
     
-    if(write_ppm (argv[3], xsize, ysize, (char *)src) != 0)
+    //Write the blurred img
+    if(write_ppm (argv[3], xsize, ysize, (char *)dst) != 0)
       exit(1);
 
 
