@@ -66,7 +66,7 @@ void* blur(void *d){
 		}
 	}
 
-	for (y = data->y_start; y<=data->y_end; y++) {
+	for (y = data->img_start; y<=data->img_end; y++) {
 		for (x = data->x_start; x<data->x_end; x++) {
 			r = w[0] * pix(dst, x, y, xsize)->r;
 			g = w[0] * pix(dst, x, y, xsize)->g;

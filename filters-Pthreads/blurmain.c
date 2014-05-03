@@ -6,7 +6,7 @@
 #include "blurfilter.h"
 #include "gaussw.h"
 #include <pthread.h>
-#define NUM_THREADS 4
+#define NUM_THREADS 16
 #define MAX_RAD 1000
 
 // x_matfe
