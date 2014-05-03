@@ -22,8 +22,9 @@ pixel* pix(pixel* image, const int xx, const int yy, const int xsize)
 }
 
 
-void* blur(const int xsize, const int ysize, pixel* src, const int radius, const double *w){
-
+void* blur(void *d){
+  blur_data *data = (blur_data*) d;
+  
 	int x, y, x2, y2, wi;
 	double r, g, b, n, wc;
 	pixel dst[MAX_PIXELS];

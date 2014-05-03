@@ -142,7 +142,7 @@ int main (int argc, char ** argv) {
 	//Apply blur filter for each threads segment
 	for (t = 0; t<NUM_THREADS; t++){
 		printf("Initiating thread: %ld\n", t);
-		ret = pthread_create(&threads[t], NULL, calc_average, (void*)&data[t]);
+		ret = pthread_create(&threads[t], NULL, blur, (void*)&data[t]);
 		if (ret){
 			printf("Failed to initiate thread: %ld\n!", t);
 			exit(-1);
