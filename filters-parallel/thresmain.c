@@ -166,7 +166,8 @@ int main (int argc, char ** argv) {
     MPI_Bcast(&avg, 1, MPI_UNSIGNED, root, MPI_COMM_WORLD);
 
     // Scatter again - Apply filtering
-    MPI_Scatter(src, chunk, mpi_img, rbuf, chunk, mpi_img, root, MPI_COMM_WORLD);
+    //Not needed
+    //MPI_Scatter(src, chunk, mpi_img, rbuf, chunk, mpi_img, root, MPI_COMM_WORLD);
     
     apply_threshold_filter(chunk, avg, rbuf);
 

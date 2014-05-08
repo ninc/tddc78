@@ -9,6 +9,7 @@
 #include "ppmio.h"
 
 
+
 pixel* pix(pixel* image, const int xx, const int yy, const int xsize)
 {
   register int off = xsize*yy + xx;
@@ -31,11 +32,11 @@ void* blur(void *d){
   unsigned int radius = data->radius;
   int x, y, x2, y2, wi;
   double r, g, b, n, wc;
-  pixel dst[MAX_PIXELS];
+  pixel *dst = data->dst;
 
   printf("y_start %d, y_end %d, radius %d, img_start %d, img_end %d of thread %d\n", data->y_start, data->y_end, data->radius, data->img_start, data->img_end, data->id);
 
-	for (y = data->y_start; y<=data->y_end; y++) {
+	for (y = data->img_start; y<=data->img_end; y++) {
 		for (x = data->x_start; x<data->x_end; x++) {
 			r = w[0] * pix(src, x, y, xsize)->r;
 			g = w[0] * pix(src, x, y, xsize)->g;
@@ -66,6 +67,14 @@ void* blur(void *d){
 		}
 	}
 
+	// Synchronization point
+	int rc = pthread_barrier_wait(&barr);
+	if(rc != 0 && rc != PTHREAD_BARRIER_SERIAL_THREAD)
+	  {
+	    printf("Could not wait on barrier\n");
+	    exit(-1);
+	  }
+
 	for (y = data->img_start; y<=data->img_end; y++) {
 		for (x = data->x_start; x<data->x_end; x++) {
 			r = w[0] * pix(dst, x, y, xsize)->r;
@@ -91,9 +100,9 @@ void* blur(void *d){
 					n += wc;
 				}
 			}
-			pix(data->dst, x, y, xsize)->r = r / n;
-			pix(data->dst, x, y, xsize)->g = g / n;
-			pix(data->dst, x, y, xsize)->b = b / n;
+			pix(data->src, x, y, xsize)->r = r / n;
+			pix(data->src, x, y, xsize)->g = g / n;
+			pix(data->src, x, y, xsize)->b = b / n;
 		}
 	}
 

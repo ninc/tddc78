@@ -87,6 +87,13 @@ int main (int argc, char ** argv) {
 
     double w[MAX_RAD];
 
+    // Barrier initialization
+    if(pthread_barrier_init(&barr, NULL, NUM_THREADS))
+    {
+        printf("Could not create a barrier\n");
+        exit(1);
+    }
+
     /* Take care of the arguments */
 
     if (argc != 4) {
@@ -148,7 +155,7 @@ int main (int argc, char ** argv) {
     printf("Writing output file\n");
     
     //Write the blurred img
-    if(write_ppm (argv[3], xsize, ysize, (char *)dst) != 0)
+    if(write_ppm (argv[3], xsize, ysize, (char *)src) != 0)
       exit(1);
 
 
