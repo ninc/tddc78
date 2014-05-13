@@ -1,9 +1,12 @@
+// my first program in C++
+#include <iostream>
 #include <stdio.h>
 
 
 const int n  = 1000;
 const int maxiter = 1000;
 const double tol = 0.001;
+
 
 
 //Set boundary conditions and initial values for the unknowns
@@ -35,30 +38,16 @@ void setBoundary(double[][]* T)
   return 0;
 }
 
-
 //Solve the linear system of equations using the Jacobi method
 void jacobi(double[][] *T)
 {
   int i, j, k;
-  double *tmp1[n];
-  double tmp2[n];
-  double error, x;
+  double error = 0.0f;
 
-  for(k = 1; k<maxiter;k++)
-    {
-      
 
-      // Be wary of fortran magic!
-      tmp1 = T[0][0]
-      
 
-    }
+  
 
-  for(x_slot=1; x_slot<n; x_slot++){
-    for(k=1;k<maxiter;k++){
-      tmp1 = T[x_slot][0];
-      for(j=1;j<maxiterj;j++){
-	tmp2 = T[x_slot][
 
 
 
@@ -67,7 +56,7 @@ void jacobi(double[][] *T)
 
 int main (int argc, char ** argv) {
   
-  double T[n+1][n+1]; // Kanske inte n+1 utan bara n
+  double T[n][n]; // Kanske inte n+1 utan bara n
   float t1, t2;
   char str;
 

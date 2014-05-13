@@ -1,6 +1,6 @@
 !export OMP_NUM_THREADS=16
 !gfortran -openmp -O3 -mavx -march=native laplsolve laplsolve.f90
-!$ompsalloc ./laplsolve
+!!$ompsalloc ./laplsolve
 
 program laplsolv
 !-----------------------------------------------------------------------
@@ -36,7 +36,14 @@ program laplsolv
      do j=1,n
         tmp2=T(1:n,j)
         T(1:n,j)=(T(0:n-1,j)+T(2:n+1,j)+T(1:n,j+1)+tmp1)/4.0D0
+
+        !if(j == 1) then
+        !   write(unit=*,fmt=*) 'Temperature of element after T(1,1)  =',T(1,1)
+        !   write(unit=*,fmt=*) 'maxval  =',maxval(abs(tmp2-T(1:n,j)))
+        !end if
+
         error=max(error,maxval(abs(tmp2-T(1:n,j))))
+        ! write(unit=*,fmt=*) 'Error estimate  =', error, 'j=', j
         tmp1=tmp2
      end do
      
@@ -50,7 +57,7 @@ program laplsolv
 
   write(unit=*,fmt=*) 'Time:',t1-t0,'Number of Iterations:',k
   write(unit=*,fmt=*) 'Temperature of element T(1,1)  =',T(1,1)
-
+  write(unit=*,fmt=*) 'Error estimate  =', error
   ! Uncomment the next part if you want to write the whole solution
   ! to a file. Useful for plotting. 
   
