@@ -2,38 +2,29 @@
 
 
 #include <iostream>
+#include "physics.h"
 #include "definitions.h"
 #include "coordinate.h"
-#include "physics.h"
 #include <math.h>
 #include <time.h>
 
 using namespace std;
 
 #define max_vel 50
-#define max_l 2000
-#define n 1000
-#define t 50
+#define max_l 20
+#define n 100
 
 //Setup needed data structes for the simulation
-cord_t init(particle_t *particles)
+bool init_particles3(particle_t *particles)
 {
   //allocate memory
   float r;
   float phi;
 
-  time_t t1;
-  time(&t1);
-  srand(t1);
- 
-  //initialize the walls
-  cord_t wall;
-  wall.x0 = 0;
-  wall.y0 = 0;
-  wall.y1 = max_l;
-  wall.x1 = max_l;
+  time_t t;
+  time(&t);
+  srand(t);
 
-  //initialize the particles
   double probability = 0;
   for (int i = 0; i < n; i++){
     //randomize the velocity
@@ -49,65 +40,63 @@ cord_t init(particle_t *particles)
     probability = rand() /(double)RAND_MAX;
     particles[i].pcord.y = probability* max_l;
   }
-  return wall;
+  return true;
 }
 
 // Simulate particle pressure
-int simulate(particle_t particles[n], cord_t wall)
+int simulate(int t, particle_t particles[n])
 {
   //begin simulation
   float collision = 0;
-  float global_momentum = 0;
-  for(int i=0;i<t;i++){
-    
-    //Broadcast particles
-
-    //main loop
+  for(int i=0;i<t;i++=){
+  //main loop
     for(int j=0;j<n;j++){
       for(int k=j+1;k<n;k++){
 	 //Check for collisions
-	collision = collide(&particles[j].pcord, &particles[k].pcord);
+	collision = collide(particles[j], particles[k]);
 	//if no collision
 	if(collision == -1){
-	  //Move particles that have not collided
-	  feuler(&particles[j].pcord, i);
-	  
+	  feuler(particles[j], i);
 	}
 	//collision
 	else{
-	  interact(&particles[j].pcord, &particles[k].pcord, collision);
-	}
-	// Check for wall interaction and add the momentum
-	global_momentum += wall_collide(&particles[j].pcord, wall);
+	  interact(particles[j], particles[k], collision);
+	}	
       }
     }
+  //Move particles that havn't colided
   
-  // Communicate if needed bastard!
+  // Check for wall interaction and add the momentum
+
+  // Communicate if needed
 
   }
-  return global_momentum;
+
+  return 0;
 }
 
 
 
 // Calculate the pressure and verify that the calculations are correct
-float calc_pressure(float momentum)
+bool calc_pressure()
 {
 
-  return momentum /= (t*4*max_l);
+  return true;
 }
 
 int main (int argc, char ** argv) {
+  int t = (int) argv[1];
+  //particle_t *particles[n];
   particle_t particles[n];
-  float momentum;
   cout<< "begin init particles" << endl;
   // Initialize simulation
-  cord_t wall = init(particles);
+  init_particles3(particles);
   cout<< "finished init particles" << endl;
   
-  momentum = simulate(particles, wall);
-  //calculate the total pressure of the bag-in-box
-  cout<< "pressure: " <<   calc_pressure(momentum) <<  endl;
+  simulate(t, particles);
+
+  //calc_pressure();
+  //clea
   //clean_particles(particles);
   return 0;
 }
