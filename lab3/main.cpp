@@ -1,7 +1,11 @@
 // my first program in C++
 //export OMP_NUM_THREADS=16
-//$ompsalloc ./main
 // icpc -xHost -openmp -o main main.cpp 
+//./main
+
+//10 times faster as OMP_NUM_THREADS=16 vs 1
+
+//$ompsalloc ./main
 #include <iostream>
 #include <stdio.h>
 #include <math.h>

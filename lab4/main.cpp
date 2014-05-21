@@ -1,5 +1,6 @@
 // Mädz super duper particle simulation (MSDPS)
-
+//icpc -o main main.cpp physics.c
+//./main
 
 #include <iostream>
 #include "definitions.h"
@@ -11,8 +12,8 @@
 using namespace std;
 
 #define max_vel 50
-#define max_l 2000
-#define n 1000
+#define max_l 10000
+#define n 16000
 #define t 50
 
 //Setup needed data structes for the simulation
@@ -67,23 +68,22 @@ int simulate(particle_t particles[n], cord_t wall)
       for(int k=j+1;k<n;k++){
 	 //Check for collisions
 	collision = collide(&particles[j].pcord, &particles[k].pcord);
-	//if no collision
-	if(collision == -1){
-	  //Move particles that have not collided
-	  feuler(&particles[j].pcord, i);
-	  
-	}
-	//collision
-	else{
+	//if collision
+	if(collision != -1){
 	  interact(&particles[j].pcord, &particles[k].pcord, collision);
+	  break;
 	}
-	// Check for wall interaction and add the momentum
-	global_momentum += wall_collide(&particles[j].pcord, wall);
       }
+      //if no collision
+      if(collision == -1) {
+	//Move particles that have not collided
+        feuler(&particles[j].pcord, i);
+      }
+      global_momentum += wall_collide(&particles[j].pcord, wall);
     }
-  
-  // Communicate if needed bastard!
-
+    
+    // Communicate if needed bastard!
+    
   }
   return global_momentum;
 }
@@ -102,12 +102,17 @@ int main (int argc, char ** argv) {
   float momentum;
   cout<< "begin init particles" << endl;
   // Initialize simulation
+  
   cord_t wall = init(particles);
   cout<< "finished init particles" << endl;
-  
+  clock_t t1,t2;
+  t1 = clock();
   momentum = simulate(particles, wall);
   //calculate the total pressure of the bag-in-box
+  t2=clock();
   cout<< "pressure: " <<   calc_pressure(momentum) <<  endl;
+  float sim_time = ((float)t2-(float)t1)/CLOCKS_PER_SEC;
+  cout<< "Simulation finished after: " <<   sim_time <<  endl;
   //clean_particles(particles);
   return 0;
 }

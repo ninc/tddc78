@@ -34,7 +34,7 @@ void* blur(void *d){
   double r, g, b, n, wc;
   pixel *dst = data->dst;
 
-  printf("y_start %d, y_end %d, radius %d, img_start %d, img_end %d of thread %d\n", data->y_start, data->y_end, data->radius, data->img_start, data->img_end, data->id);
+  //printf("y_start %d, y_end %d, radius %d, img_start %d, img_end %d of thread %d\n", data->y_start, data->y_end, data->radius, data->img_start, data->img_end, data->id);
 
 	for (y = data->img_start; y<=data->img_end; y++) {
 		for (x = data->x_start; x<data->x_end; x++) {

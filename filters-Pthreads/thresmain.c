@@ -1,19 +1,11 @@
+#include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include "ppmio.h"
 #include "thresfilter.h"
-#include <pthread.h>
-#define NUM_THREADS 4
-
-/*void *PrintHello(void *threadId) { 
-long tId;
-tId = (long)threadId; 
-printf("Hello World! It's thread #%ld!\n", tId); 
-return NULL;
-}
-*/
+#define NUM_THREADS 16
 
 typedef struct _thresh_data
 {
@@ -66,7 +58,7 @@ void sum_avg(thresh_data data[])
   for(i=0; i< NUM_THREADS; i++)
     {
       data[i].average = sum;
-      printf("average: %d of thread: %d \n", data[i].average, data[i].id); 
+      //printf("average: %d of thread: %d \n", data[i].average, data[i].id); 
     }
 }
 
@@ -105,7 +97,7 @@ void* calc_average(void *d)
 
  data->average = sum / size; // Average pixel color
 
- printf("Avg: %d\n", data->average);
+ //printf("Avg: %d\n", data->average);
 
  return 0;
 }
@@ -119,8 +111,6 @@ int main (int argc, char ** argv) {
     long t;
     int ret;
     //Initiate the threads
-
-   
     
     /* Take care of the arguments */
 
@@ -142,9 +132,18 @@ int main (int argc, char ** argv) {
 
     calc_thread_data(data, xsize, ysize, src);
 
+    //clock_gettime(CLOCK_REALTIME, &stime);
+
+    // clock_t t1,t2;
+    struct timespec start, stop;
+    //clock_gettime(CLOCK_MONOTONIC, &stop);
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    long long int t1 = start.tv_sec * 1000000000 + start.tv_nsec;
+ 
+
     //Calculate average data for each threads segment
     for(t=0;t<NUM_THREADS;t++){
-      printf("Initiating thread: %ld\n", t);
+      //printf("Initiating thread: %ld\n", t);
       ret = pthread_create(&threads[t], NULL, calc_average, (void*) &data[t]);
       if(ret){
 	printf("Failed to initiate thread: %ld\n!", t);
@@ -158,7 +157,7 @@ int main (int argc, char ** argv) {
     sum_avg(data);
 
     for(t=0;t<NUM_THREADS;t++){
-      printf("Initiating thread: %ld\n", t);
+      //printf("Initiating thread: %ld\n", t);
       ret = pthread_create(&threads[t], NULL, apply_filter, (void*) &data[t]);
       if(ret){
 	printf("Failed to initiate thread: %ld\n!", t);
@@ -168,15 +167,17 @@ int main (int argc, char ** argv) {
     for(t=0;t<NUM_THREADS;t++){
       pthread_join(threads[t], NULL);
     }
-    
-    //clock_gettime(CLOCK_REALTIME, &stime);
 
-    // thresfilter(xsize, ysize, src);
 
-    //clock_gettime(CLOCK_REALTIME, &etime);
+    clock_gettime(CLOCK_MONOTONIC, &stop);
+    long long int t2 = stop.tv_sec * 1000000000 + stop.tv_nsec;
 
     //printf("Filtering took: %g secs\n", (etime.tv_sec  - stime.tv_sec) +
     //	   1e-9*(etime.tv_nsec  - stime.tv_nsec)) ;
+
+    float sim_time = (double)(t2-t1)/CLOCKS_PER_SEC;
+
+    printf("Filtering took [s] : %f\n", sim_time);
 
     /* write result */
     printf("Writing output file\n");

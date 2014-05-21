@@ -103,7 +103,7 @@ int main (int argc, char ** argv) {
 	printf("Calling filter\n");
 
 	y = (ysize/size);
-	printf("value of y and x: %d, %d \n", y, xsize);
+	//printf("value of y and x: %d, %d \n", y, xsize);
       }
 
     //Creating buffer
@@ -180,8 +180,8 @@ int main (int argc, char ** argv) {
 	recelm = y*xsize;
       }
 
-    if(rank==1)
-      printf("Local displ for rank %d: %d: %d: \n", rank, lwbnd, upbnd);
+    //if(rank==1)
+      //printf("Local displ for rank %d: %d: %d: \n", rank, lwbnd, upbnd);
     //printf("Send count for rank %u: %u\n", rank, sendcnt);
 
 
@@ -200,6 +200,7 @@ int main (int argc, char ** argv) {
     MPI_Gather(&recelm, 1, MPI_INT, recelement, 1, MPI_INT, root, MPI_COMM_WORLD);
 
     // Test
+    /*
     if(rank==root)
       {
 	int i;
@@ -210,6 +211,7 @@ int main (int argc, char ** argv) {
 
       }
 
+    */
     // Where the action happens!
     clock_gettime(CLOCK_REALTIME, &stime);
 
@@ -252,7 +254,7 @@ int main (int argc, char ** argv) {
 	uint k = recimg + recelm;
 	uint o = xsize*ysize;
 
-	printf("last_pos %d, imagesize %d\n",k,o);
+	//printf("last_pos %d, imagesize %d\n",k,o);
 
       }
 
