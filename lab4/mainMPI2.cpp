@@ -18,7 +18,7 @@ using namespace std;
 
 #define max_vel 50
 #define max_l 10000
-#define n 10
+#define n 10000
 #define t 50
 #define root 0
 
@@ -81,12 +81,8 @@ void init_particles(int x, int y, int l)
   srand(tt1);
 
   // Fill the linked list with particles
-
   for(i = 0; i<n; i++)
     {
-      if(i%1000 == 0)
-	cout << "i=" << i << endl;
-
       //Create particle data
       temp = create_particle(x, y, l);
       
@@ -99,37 +95,111 @@ void init_particles(int x, int y, int l)
 
 int main (int argc, char ** argv) {
 
+  MPI_Init(NULL, NULL);
+  MPI_Datatype pcord_t_mpi;
+  MPI_Datatype particle_mpi;
+  MPI_Datatype wall_mpi;
+  int rank;
+  int size;
+   
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  float momentum;
+  float momentum = 0;
+  float collision = 0;
   clock_t t1,t2;
   cord_t wall;
 
-  cout << "Starting initation" << endl;
+  //setup particles for each thread
   init_particles(max_l, max_l, max_l);
-  cout << "Initation finished" << endl;
-   
-  p* temp = lget_first();
 
-  lprint_id();
+  //initialize the walls
+  wall.x0 = 0;
+  wall.y0 = 0;
+  wall.y1 = max_l;
+  wall.x1 = max_l;
 
-  cout << "removing middle item" << endl;
-  lremove(temp->next);
+  p* p1 = NULL;
+  p* p2 = NULL;
 
-  lprint_id();
+  //---------------------------------------------------------------------------------
+  //Create datatype for pcord in MPI
+  const int nitems=4;
+  int blocklengths[4] = {1,1,1, 1};
+  MPI_Datatype types[4] = {MPI_FLOAT, MPI_FLOAT , MPI_FLOAT, MPI_FLOAT};
+  MPI_Aint offsets[4];
+  offsets[0] = offsetof(pcord_t, x);
+  offsets[1] = offsetof(pcord_t, y);
+  offsets[2] = offsetof(pcord_t, vx);
+  offsets[3] = offsetof(pcord_t, vy);
+ 
+  MPI_Type_create_struct(nitems, blocklengths, offsets, types, &pcord_t_mpi);
+  MPI_Type_commit(&pcord_t_mpi);
+  //Create datatype for particle in MPI
+  const int nitems2=2;
+  int blocklengths2[2] = {1,1};
+  MPI_Datatype types2[2] = {pcord_t_mpi, MPI_INT};
+  //MPI_Datatype particle_mpi;
+  MPI_Aint offsets2[2];
+  offsets2[0] = offsetof(particle_t, pcord);
+  offsets2[1] = offsetof(particle_t, ptype);
 
-  cout << "removing last item" << endl;
-  lremove(lget_last());
+  MPI_Type_create_struct(nitems2, blocklengths2, offsets2, types2, &particle_mpi);
+  MPI_Type_commit(&particle_mpi);
+  //----------------------------------------------------------------------------------
+  
 
-  lprint_id();
 
-  cout << "removing first item" << endl;
-  lremove(temp);
 
-  lprint_id();
 
-  cout << "removing all items" << endl;
+
+  //START THE TIMER
+  t1 = clock();
+
+
+  // Time step loop
+  for(int i=0;i<t;i++){
+    p1 = lget_first();
+
+
+    //main loop
+    for(int j=0;j<lget_size()-1;j++){
+      p2 = p1->next;
+
+
+
+      for(int k=j;k<lget_size();k++){
+      
+	//If outside of our area communicate it to other mpi processes
+
+	//Check for collisions
+	collision = collide(p1->pcord, p2->pcord);
+	//if collision
+	if(collision != -1){
+	  interact(p1->pcord, p2->pcord, collision);
+	  break;
+	}
+      }
+      //if no collision
+      if(collision == -1) {
+	//Move particles that have not collided
+	feuler(p1->pcord, i);
+      }
+
+      // Wall collisions
+      momentum += wall_collide(p1->pcord, wall);
+    
+      p1 = p1->next;
+    }
+  }
+
+
+  t2=clock();
+  cout<< "pressure: " <<   calc_pressure(&momentum) <<  endl;
+  float sim_time = ((float)t2-(float)t1)/CLOCKS_PER_SEC;
+  cout<< "Simulation finished after: " <<   sim_time <<  endl;
+
+  //Free memory
   lclear();
-
-  lprint_id();
 
 }
