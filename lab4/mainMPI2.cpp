@@ -3,8 +3,6 @@
 //salloc -N 1 -t 1 mpprun ./mainMPI
 //mpprun ./mainMPI
 
-//100 times faster than main.cpp
-
 #include "mpi.h"
 #include <iostream>
 #include "definitions.h"
@@ -37,6 +35,7 @@ float calc_pressure(float *momentum)
 //Algorithm should detect if a particle is out of the assigned threads area
 //then send it to that thread and delete it in its own list.
 //How to handle walls (should one thread handle it)?
+
 
 int main (int argc, char ** argv) {
   MPI_Init(NULL, NULL);
