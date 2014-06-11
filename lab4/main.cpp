@@ -13,7 +13,7 @@ using namespace std;
 
 #define max_vel 50
 #define max_l 10000
-#define n 16000
+#define n 32000
 #define t 50
 
 //Setup needed data structes for the simulation

@@ -5,7 +5,7 @@
 #include <time.h>
 #include "ppmio.h"
 #include "thresfilter.h"
-#define NUM_THREADS 1
+#define NUM_THREADS 16
 
 typedef struct _thresh_data
 {
@@ -136,7 +136,7 @@ int main (int argc, char ** argv) {
 
     // clock_t t1,t2;
     struct timespec start, stop;
-    clock_gettime(CLOCK_MONOTONIC, &stop);
+    //clock_gettime(CLOCK_MONOTONIC, &stop);
     clock_gettime(CLOCK_MONOTONIC, &start);
     long long int t1 = start.tv_sec * 1000000000 + start.tv_nsec;
  

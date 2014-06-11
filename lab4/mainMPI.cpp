@@ -12,6 +12,7 @@
 #include "physics.h"
 #include <math.h>
 #include <time.h>
+#include <stdio.h>
 
 using namespace std;
 
@@ -126,6 +127,7 @@ int main (int argc, char ** argv) {
     //START THE TIMER
     t1 = clock();
   }
+  MPI_Barrier(MPI_COMM_WORLD);
   //Bcast wall?'
   MPI_Bcast(&wall, 1, wall_mpi, root, MPI_COMM_WORLD);
   MPI_Bcast(&particles, 1, particle_mpi, root, MPI_COMM_WORLD);
@@ -140,7 +142,11 @@ int main (int argc, char ** argv) {
   particle_t* rbuf = NULL;
   if(rank ==size-1){
     chunk = chunk + (n - chunk*size);
+    printf ("rank: %d chunk: %d \n", rank, chunk);
+    //cout<< "rank: " << rank << " chunk: " <<   chunk <<  endl;
   }
+  printf ("rank: %d chunk: %d \n", rank, chunk);
+  //cout<< "rank: " << rank << " chunk: " <<   chunk <<  endl;
   local_momentum = (float *)malloc(sizeof(float));
   *local_momentum = 0;
   if(rank == root){

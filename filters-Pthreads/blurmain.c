@@ -4,13 +4,151 @@
 #include <string.h>
 #include <time.h>
 #include "ppmio.h"
-#include "blurfilter.h"
+//#include "blurfilter.h"
 #include "gaussw.h"
 #define NUM_THREADS 16
 #define MAX_RAD 1000
 
 // x_matfe
 // HPL2245wg
+
+////////////////////////////
+pthread_barrier_t barr;
+
+typedef struct _pixel {
+    unsigned char r,g,b;
+} pixel;
+
+
+typedef struct _blur_data
+{
+	int id;
+	unsigned int x_start;
+	unsigned int x_end;
+	unsigned int y_start;
+	unsigned int y_end;
+	unsigned int y_max;
+	unsigned int x_max;
+	unsigned int img_start;
+	unsigned int img_end;
+	unsigned int radius;
+	double * gauss;
+	pixel* src;
+	pixel* dst;
+} blur_data;
+
+//////////////////////////////////////////////////////////
+
+pixel* pix(pixel* image, const int xx, const int yy, const int xsize)
+{
+  register int off = xsize*yy + xx;
+
+#ifdef DBG
+  if(off >= MAX_PIXELS) {
+    fprintf(stderr, "\n Terribly wrong: %d %d %d\n",xx,yy,xsize);
+  }
+#endif
+  return (image + off);
+}
+
+
+
+void* blur(void *d){
+  blur_data *data = (blur_data*) d;
+  pixel* src = data->src;
+  double* w = data->gauss;
+  unsigned int xsize = data->x_max;
+  unsigned int ysize = data->y_max;
+  unsigned int radius = data->radius;
+  int x, y, x2, y2, wi;
+  double r, g, b, n, wc;
+  pixel *dst = data->dst;
+
+  printf("y_start %d, y_end %d, radius %d, img_start %d, img_end %d of thread %d\n", data->y_start, data->y_end, data->radius, data->img_start, data->img_end, data->id);
+
+	for (y = data->img_start; y<=data->img_end; y++) {
+		for (x = data->x_start; x<data->x_end; x++) {
+			r = w[0] * pix(src, x, y, xsize)->r;
+			g = w[0] * pix(src, x, y, xsize)->g;
+			b = w[0] * pix(src, x, y, xsize)->b;
+			n = w[0];
+			for (wi = 1; wi <= radius; wi++) {
+				wc = w[wi];
+				x2 = x - wi;
+				// If we are outside of the img
+				if (x2 >= 0) {
+					r += wc * pix(src, x2, y, xsize)->r;
+					g += wc * pix(src, x2, y, xsize)->g;
+					b += wc * pix(src, x2, y, xsize)->b;
+					n += wc;
+				}
+				x2 = x + wi;
+				// If we are outside of the img
+				if (x2 <= data->x_max) {
+					r += wc * pix(src, x2, y, xsize)->r;
+					g += wc * pix(src, x2, y, xsize)->g;
+					b += wc * pix(src, x2, y, xsize)->b;
+					n += wc;
+				}
+			}
+			pix(dst, x, y, xsize)->r = r / n;
+			pix(dst, x, y, xsize)->g = g / n;
+			pix(dst, x, y, xsize)->b = b / n;
+		}
+	}
+
+	// Synchronization point
+	int rc = pthread_barrier_wait(&barr);
+	if(rc != 0 && rc != PTHREAD_BARRIER_SERIAL_THREAD)
+	  {
+	  printf("Could not wait on barrier\n");
+	   exit(-1);
+	  }
+
+	for (y = data->img_start; y<=data->img_end; y++) {
+		for (x = data->x_start; x<data->x_end; x++) {
+			r = w[0] * pix(dst, x, y, xsize)->r;
+			g = w[0] * pix(dst, x, y, xsize)->g;
+			b = w[0] * pix(dst, x, y, xsize)->b;
+			n = w[0];
+			for (wi = 1; wi <= radius; wi++) {
+				wc = w[wi];
+				y2 = y - wi;
+				// If we are outside of the img
+				if (y2 >= 0 && y2 >= data->y_start) {
+					r += wc * pix(dst, x, y2, xsize)->r;
+					g += wc * pix(dst, x, y2, xsize)->g;
+					b += wc * pix(dst, x, y2, xsize)->b;
+					n += wc;
+				}
+				y2 = y + wi;
+				// If we are outside of the img
+				if (y2 <= data->y_end && y2 <= data->y_max) {
+					r += wc * pix(dst, x, y2, xsize)->r;
+					g += wc * pix(dst, x, y2, xsize)->g;
+					b += wc * pix(dst, x, y2, xsize)->b;
+					n += wc;
+				}
+			}
+			pix(data->src, x, y, xsize)->r = r / n;
+			pix(data->src, x, y, xsize)->g = g / n;
+			pix(data->src, x, y, xsize)->b = b / n;
+		}
+	}
+
+	return 0;
+}
+
+
+
+
+
+
+
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 void calc_thread_data(blur_data data[], int xsize, int ysize, int radius, double* gauss, pixel* src, pixel* dst)
 {
@@ -28,7 +166,7 @@ void calc_thread_data(blur_data data[], int xsize, int ysize, int radius, double
       // Correct the concatination fault
       if (i == NUM_THREADS - 1)
 	{
-	  end = ysize;
+	  end = ysize-1;
 	}
       else
 	{
@@ -126,15 +264,15 @@ int main (int argc, char ** argv) {
 
   printf("Calling filter\n");
 
-  clock_t t1,t2;
-  // struct timespec start, stop;
+  //clock_t t1,t2;
+   struct timespec start, stop;
   // clock_gettime(CLOCK_MONOTONIC, &start);
   // long long int t1 = start.tv_sec * 1000000000 + start.tv_nsec;
   //struct timespec start, stop;
-    //clock_gettime(CLOCK_MONOTONIC, &stop);
-    //clock_gettime(CLOCK_MONOTONIC, &start);
-   //long long int t1 = start.tv_sec * 1000000000 + start.tv_nsec;
-   t1 = clock();
+  //clock_gettime(CLOCK_MONOTONIC, &stop);
+  clock_gettime(CLOCK_MONOTONIC, &start);
+  long long int t1 = start.tv_sec * 1000000000 + start.tv_nsec;
+  //t1 = clock();
   //clock_gettime(CLOCK_REALTIME, &stime);
 
   //Apply blur filter for each threads segment
@@ -150,15 +288,15 @@ int main (int argc, char ** argv) {
     pthread_join(threads[t], NULL);
   }
 
-  // clock_gettime(CLOCK_MONOTONIC, &stop);
-  // long long int t2 = stop.tv_sec * 1000000000 + stop.tv_nsec;
+   clock_gettime(CLOCK_MONOTONIC, &stop);
+   long long int t2 = stop.tv_sec * 1000000000 + stop.tv_nsec;
   //clock_gettime(CLOCK_MONOTONIC, &stop);
   //long long int t2 = stop.tv_sec * 1000000000 + stop.tv_nsec;
-  t2 = clock();
-  //float sim_time = (double)(t2-t1)/CLOCKS_PER_SEC;
-  float diff = (((float)t2 - (float)t1) /  CLOCKS_PER_SEC) * 1000; 
+  //t2 = clock();
+  float sim_time = (double)(t2-t1)/1000000000;
+  //float diff = (((float)t2 - (float)t1) /  CLOCKS_PER_SEC) * 1000; 
 
-  printf("Filtering took [s] : %f \n", diff);
+  printf("Filtering took [s] : %f \n", sim_time);
 
   //blurfilter(xsize, ysize, src, radius, w);
 

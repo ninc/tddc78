@@ -4,8 +4,17 @@
 #include <string.h>
 #include <time.h>
 #include "ppmio.h"
-#include "thresfilter.h"
-#define NUM_THREADS 16
+//#include "thresfilter.h"
+#define NUM_THREADS 1
+
+
+//////
+typedef struct _pixel {
+    unsigned char r,g,b;
+} pixel;
+///////
+
+
 
 typedef struct _thresh_data
 {

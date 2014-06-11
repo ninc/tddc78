@@ -130,12 +130,11 @@ int main (int argc, char ** argv) {
   // struct timespec start, stop;
   // clock_gettime(CLOCK_MONOTONIC, &start);
   // long long int t1 = start.tv_sec * 1000000000 + start.tv_nsec;
-   struct timespec start, stop;
-    //clock_gettime(CLOCK_MONOTONIC, &stop);
-    //clock_gettime(CLOCK_MONOTONIC, &start);
-   //long long int t1 = start.tv_sec * 1000000000 + start.tv_nsec;
-   t1 = clock();
-
+  //struct timespec start, stop;
+  //clock_gettime(CLOCK_MONOTONIC, &stop);
+  //clock_gettime(CLOCK_MONOTONIC, &start);
+  //long long int t1 = start.tv_sec * 1000000000 + start.tv_nsec;
+  t1 = clock();
   //clock_gettime(CLOCK_REALTIME, &stime);
 
   //Apply blur filter for each threads segment
@@ -156,10 +155,10 @@ int main (int argc, char ** argv) {
   //clock_gettime(CLOCK_MONOTONIC, &stop);
   //long long int t2 = stop.tv_sec * 1000000000 + stop.tv_nsec;
   t2 = clock();
+  //float sim_time = (double)(t2-t1)/CLOCKS_PER_SEC;
+  float diff = (((float)t2 - (float)t1) /  CLOCKS_PER_SEC) * 1000; 
 
-  float sim_time = (double)(t2-t1)/CLOCKS_PER_SEC;
-
-  printf("Filtering took [s] : %f\n", sim_time);
+  printf("Filtering took [s] : %f \n", diff);
 
   //blurfilter(xsize, ysize, src, radius, w);
 

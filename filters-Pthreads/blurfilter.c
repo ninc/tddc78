@@ -5,6 +5,7 @@
     
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include "blurfilter.h"
 #include "ppmio.h"
 
@@ -71,8 +72,8 @@ void* blur(void *d){
 	int rc = pthread_barrier_wait(&barr);
 	if(rc != 0 && rc != PTHREAD_BARRIER_SERIAL_THREAD)
 	  {
-	    printf("Could not wait on barrier\n");
-	    exit(-1);
+	  printf("Could not wait on barrier\n");
+	   exit(-1);
 	  }
 
 	for (y = data->img_start; y<=data->img_end; y++) {

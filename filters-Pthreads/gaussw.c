@@ -4,6 +4,8 @@
   Implementation of get_gauss_weights function.
 
  */
+#include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
 
 #define MAX_X 1.33
