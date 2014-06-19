@@ -1,26 +1,29 @@
-#include <iostream>
-#include <stdlib.h>
-#include <stdio.h>
 #include "ll.h"
-
+#include <iostream>
 
 using namespace std;
 
-int size;
-int id;
-p* last;
-p* first;
-
-void linit()
+ll::ll()
 {
-  size = 0;
-  id = 0;
-  last = NULL;
-  first = NULL;
+  linit();
+}
+
+ll::~ll()                 
+{
+  lclear();
 }
 
 
-void ladd_last(pcord_t* cord)
+void ll::linit()
+{
+  m_size = 0;
+  m_id = 0;
+  m_last = NULL;
+  m_first = NULL;
+  return;
+}
+
+void ll::ladd_last(pcord_t* cord)
 {
 
   //Allocate memory
@@ -28,41 +31,42 @@ void ladd_last(pcord_t* cord)
 
 
   //Set all variables
-  particle->id = id;
+  particle->id = m_id;
   particle->pcord = cord;
-  particle->prev = last;
+  particle->prev = m_last;
   particle->next = NULL;
 
   //If the list is empty
-  if(size == 0)
-    first = particle;
+  if(m_size == 0)
+    m_first = particle;
   else
-    last->next = particle;
+    m_last->next = particle;
 
   //Make the new particle the last
-  last = particle;
-  id++;
-  size++;
+  m_last = particle;
+  m_id++;
+  m_size++;
+
   return;
 }
 
-void lremove(p* particle)
+void ll::lremove(p* particle)
 {
   //If its only one item left
-  if(particle == last && particle == first)
+  if(particle == m_last && particle == m_first)
     {
-      first = NULL;
-      last = NULL;
+      m_first = NULL;
+      m_last = NULL;
     }
   //If its the last item
-  else if(particle == last)
+  else if(particle == m_last)
     {
-      last = particle->prev;
+      m_last = particle->prev;
     }  
   //If its the first item
-  else if(particle == first)
+  else if(particle == m_first)
     {
-      first = particle->next;
+      m_first = particle->next;
     }
   //If its an item between other items
   else
@@ -75,29 +79,28 @@ void lremove(p* particle)
   free(particle);
 
   particle = NULL;
-  size--;
-
+  m_size--;
   return;
 }
 
 
 //Clear the entire list
-void lclear()
+void ll::lclear()
 {
  
-  while(size > 0)
+  while(m_size > 0)
     {
-      lremove(first);
+      lremove(m_first);
     }
 
 }
 
 // Print ids
-void lprint_id()
+void ll::lprint_id()
 {
   p* temp = lget_first();
   int i = 0;
-  for(;i<size;i++)
+  for(;i<m_size;i++)
     {
       if(temp == NULL)
 	{
@@ -112,19 +115,20 @@ void lprint_id()
     }
 
   cout << endl;
+  return;
 }
 
-int lget_size(void)
+int ll::lget_size(void)
 {
-  return size;
+  return m_size;
 }
 
-p* lget_last(void)
+p* ll::lget_last(void)
 {
-  return last;
+  return m_last;
 }
 
-p* lget_first(void)
+p* ll::lget_first(void)
 {
-  return first;
+  return m_first;
 }
