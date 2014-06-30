@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include "ll.h"
 
+#include <VT.h>
+
 
 using namespace std;
 
@@ -142,7 +144,17 @@ int main (int argc, char ** argv) {
 
   //************************************* INITIATION *******************************
 
+
   MPI_Init(NULL, NULL);
+  /* Tracing stuff for itac */
+  int counter_class, sent_particles_handle, pressure_handle;
+  long long int sent_particles;
+  long long int range[0, 100000];
+  double ranged[0, 100];
+  VT_classdef("Counter class", &counter_class);
+  VT_countdef ("sent_particles", counter_class, VT_COUNT_INTEGER64, VT_GROUP_PROCESS, range, "sent particles", &sent_particles_handle);
+  VT_countdef ("pressure", counter_class, VT_COUNT_FLOAT, VT_GROUP_PROCESS, ranged, "pressure", &pressure_handle);
+  VT_Region main_reg("main_reg", "main program");
   MPI_Datatype pcord_t_mpi;
   MPI_Datatype particle_mpi;
   MPI_Datatype wall_mpi;
@@ -282,7 +294,8 @@ int main (int argc, char ** argv) {
 
 
     // *********************************** COMMUNICATION ************************************
-
+    VT_Region com_reg("com_reg", "Communication region");
+    
     //Send north
     if(north_neighbor >= 0)
       {
@@ -292,6 +305,7 @@ int main (int argc, char ** argv) {
       if(send_north_buff_size > 0)
 	{
 	  //Send message
+	  sent_particles += send_north_buff_size;
 	  MPI_Issend(&send_north, send_north_buff_size*sizeof(pcord_t), MPI_CHAR, north_neighbor, tag2, 
 		     MPI_COMM_WORLD, &r_send_north);
 	}
@@ -307,6 +321,7 @@ int main (int argc, char ** argv) {
 	if(send_south_buff_size > 0)
 	  {
 	    //Send message
+	     sent_particles += send_south_buff_size;
 	    MPI_Issend(&send_south, send_south_buff_size*sizeof(pcord_t), MPI_CHAR, south_neighbor, tag2, 
 		       MPI_COMM_WORLD, &r_send_south);
 	  }
@@ -344,11 +359,12 @@ int main (int argc, char ** argv) {
 		     tag2, MPI_COMM_WORLD, &status);
 	  }
       }
-
+    com_reg.end();
     // *********************************** SIMULATION LOOP ********************
 
 
     //main loop
+    VT_Region coll_reg("coll_reg", "Collision detection");
     for(int j=0;j<particles->lget_size()-1;j++){
       p2 = p1->next;
       collision = 0;      
@@ -417,11 +433,17 @@ int main (int argc, char ** argv) {
 	  p1 = p1->next;
 	}
     }
+    coll_reg.end();
+    
   }
 
   //Sum momentum
   MPI_Reduce(local_momentum, global_momentum, 1, MPI_FLOAT, MPI_SUM, root, MPI_COMM_WORLD);
+  //long long tot_sent;
+  //MPI_Reduce(&sent_particles, &tot_sent, 1, MPI_LONG_LONG_INT, MPI_SUM, 0);
   
+  VT_countval(1, &sent_particles_handle, &sent_particles);
+
   if(rank == root)
     {
       t2=clock();
@@ -430,7 +452,7 @@ int main (int argc, char ** argv) {
       cout<< "Simulation finished after: " <<   sim_time <<  endl;
     }
 
-  
+  main_reg.end();
   MPI_Finalize();
 
   return 0;
